@@ -6,8 +6,8 @@ const qs = require('querystring')
 var formidable = require('formidable');
 let path = require('path');
 
-const previteCrt = path.join(__dirname, './https/7350095_www.gdyg5.top.pem')
-const previteKey = path.join(__dirname, './https/7350095_www.gdyg5.top.key')
+const previteCrt = fs.readFileSync(path.join(__dirname, './https/7350095_www.gdyg5.top.pem'))
+const previteKey = fs.readFileSync(path.join(__dirname, './https/7350095_www.gdyg5.top.key'))
 
 const HTTPS_OPTIONS = {
     key: previteKey,
@@ -36,8 +36,19 @@ const app =  https.createServer(HTTPS_OPTIONS, function (req, res) {
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     
     if (method === 'GET') {
-        res.setHeader("Content-Type", "application/json;charset=utf-8");
-        console.log(query)
+        // res.setHeader("Content-Type", "application/json;charset=utf-8");
+        res.writeHead(200,{
+            "Content-Type": "application/json;charset=utf-8"
+        });
+        if (/\/api\/v1\/ocr/.test(url)) {
+            client.generalBasicUrl(query.url).then(function(result) {
+                res.end(JSON.stringify(result))
+            }).catch(function(err) {
+                res.end(JSON.stringify(err))
+            });
+        } else {
+            emitError(res)
+        }
     } else {
         if (url === '/api/v2/ocr') {
             res.writeHead(200, {"Content-Type": "multipart/form-data;charset=utf-8"})
@@ -50,7 +61,6 @@ const app =  https.createServer(HTTPS_OPTIONS, function (req, res) {
                     res.end(JSON.stringify(err))
                 });
             })
-                    
             // let buffer = Buffer.alloc(0)
             // req.on('data', (data) => {
             //     buffer += data
@@ -59,15 +69,19 @@ const app =  https.createServer(HTTPS_OPTIONS, function (req, res) {
             //     // const URL = JSON.parse(buffer.toString())
             // })
         } else {
-            const data = {
-                msg: '请求路径错误!',
-                status: false,
-            }
-            res.statusCode = 404
-            res.end(JSON.stringify(data))
+            emitError(res)
         }
     }
 })
+
+function emitError(res) {  
+    const data = {
+        msg: '请求路径错误!',
+        status: false,
+    }
+    res.statusCode = 404
+    res.end(JSON.stringify(data))
+}
 
 app.listen(3000, () => {
     console.log('listening on 3000');
@@ -80,15 +94,3 @@ app.listen(3000, () => {
 //     // 如果发生网络错误
 //     console.log(err);
 // });
-
-// var url = "https://pics0.baidu.com/feed/2cf5e0fe9925bc3123570f287f5232b7ca13708f.jpeg?token=da2aec3e32f571cc261d094c18a8a7e4";
-
-// // 调用通用文字识别, 图片参数为远程url图片
-// client.generalBasicUrl(url).then(function(result) {
-//     console.log(JSON.stringify(result));
-// }).catch(function(err) {
-//     // 如果发生网络错误
-//     console.log(err);
-// });
-
- 
